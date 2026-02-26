@@ -17,25 +17,31 @@ final class Parser
             throw new RuntimeException("Unable to open input file: {$inputPath}");
         }
 
-        while (($line = fgets($handle)) !== false) {
-            $commaPosition = strpos($line, ',');
-            $pathStart = strpos($line, '/', self::URL_PATH_OFFSET);
-            if ($commaPosition === false || $pathStart === false) {
-                continue;
+        try {
+            while (($line = fgets($handle)) !== false) {
+                $commaPosition = strpos($line, ',');
+                $pathStart = strpos($line, '/', self::URL_PATH_OFFSET);
+                if ($commaPosition === false || $pathStart === false) {
+                    continue;
+                }
+                $path = substr($line, $pathStart, $commaPosition - $pathStart);
+                $date = substr($line, $commaPosition + 1, self::DATE_LENGTH);
+
+                $visits[$path][$date] ??= 0;
+                $visits[$path][$date]++;
             }
-            $path = substr($line, $pathStart, $commaPosition - $pathStart);
-            $date = substr($line, $commaPosition + 1, self::DATE_LENGTH);
-
-            $visits[$path][$date] ??= 0;
-            $visits[$path][$date]++;
+        } finally {
+            fclose($handle);
         }
-
-        fclose($handle);
 
         foreach ($visits as &$visitsByDate) {
             ksort($visitsByDate);
         }
+        unset($visitsByDate);
 
-        file_put_contents($outputPath, json_encode($visits, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        $json = json_encode($visits, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        if (file_put_contents($outputPath, $json) === false) {
+            throw new RuntimeException("Unable to write output file: {$outputPath}");
+        }
     }
 }

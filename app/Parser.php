@@ -27,8 +27,7 @@ final class Parser
                 $path = substr($line, $pathStart, $commaPosition - $pathStart);
                 $date = substr($line, $commaPosition + 1, self::DATE_LENGTH);
 
-                $visits[$path][$date] ??= 0;
-                $visits[$path][$date]++;
+                $visits[$path][$date] = ($visits[$path][$date] ?? 0) + 1;
             }
         } finally {
             fclose($handle);
